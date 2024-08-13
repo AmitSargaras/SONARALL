@@ -1,0 +1,387 @@
+<?xml version="1.0"?>
+
+<project name="Integro Technologies EON CMS" default="usage" basedir="." xmlns:sonar="antlib:org.sonar.ant">
+
+
+<!-- Define the SonarQube global properties (the most usual way is to pass these properties via the command line) -->
+<property name="sonar.host.url" value="http://localhost:9000" />
+ 
+
+  
+<!-- Define the SonarQube project properties -->
+<property name="sonar.projectKey" value="org.sonarqube:sonarqube-scanner-ant" />
+<property name="sonar.projectName" value="Example of SonarScanner for Ant Usage" />
+<property name="sonar.projectVersion" value="1.0" />
+<property name="sonar.sources" value="src" />
+<property name="sonar.java.binaries" value="build/classes" />
+<property name="sonar.java.libraries" value="dist/*.jar" />
+
+ 
+<!-- Define SonarScanner for Ant Target -->
+<target name="sonar">
+    <taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml">
+        <!-- Update the following line, or put the "sonarqube-ant-task-*.jar" file in your "$HOME/.ant/lib" folder -->
+        <classpath path="sonarqube-ant-task-2.7.0.1612.jar" />
+    </taskdef>
+ 
+    <!-- Execute SonarScanner for Ant Analysis -->
+    <sonar:sonar />
+</target>
+
+
+<!--
+<target name="sonar">
+  <taskdef name="sonar" classname="org.sonar.ant.SonarTask" classpath="sonarqube-ant-task-2.7.0.1612.jar"/>
+  <sonar:sonar>
+    <property name="sonar.host.url" value="http://localhost:9000"/>
+    <property name="sonar.login" value="sqp_02eb55cfdb15050dc9284ade57a0129f3a43fac5"/>
+    <property name="sonar.projectKey" value="http://localhost:9000/project/links?id=Test_project1"/>
+    <property name="sonar.projectName" value="Test_project1"/>
+    <property name="sonar.projectVersion" value="1.0"/>
+    <property name="sonar.sources" value="src"/>
+	<property name="sonar.scm.svn.username" value="santosh.sonmankar"/>
+    <property name="sonar.scm.svn.password" value="admin#123"/>
+  </sonar:sonar>
+</target>
+
+-->
+
+
+	<import file="bin/websphere/build.xml" />
+	<import file="bin/weblogic/build.xml" />
+
+	<patternset id="cms.full.packages">
+		<include name="com/integrosys/**" />
+		<include name="com/iflex/**" />
+		<include name="com/hdfcbank/**" />
+		<include name="com/ofss/**" />
+		<include name="com/hdfcAPI/**" />
+		<include name="com/aurionpro/**" />
+	</patternset>
+
+	<patternset id="cms.core.packages">
+		<include name="com/integrosys/**" />
+		<exclude name="com/integrosys/cms/batch/**" />
+		<exclude name="com/integrosys/cms/host/**" />
+	</patternset>
+
+	<patternset id="cms.batch.packages">
+		<include name="com/integrosys/cms/batch/**" />
+	</patternset>
+
+	<patternset id="cms.ear.dist.3rdparty.jars">
+		<include name="integrobase.jar" />
+		<include name="uiinfrabase.jar" />
+		<include name="ofacomp.jar" />
+		<include name="ofacompui.jar" />
+	</patternset>
+
+	<target name="usage">
+		<echo message="dev [target]" />
+		<echo message="Supported 'target' Options:" />
+		<echo message="  clean --> delete all previously compiled class files" />
+		<echo message="  compile --> compile all modified java source files using jdk 1.4 or above" />
+		<echo message="  compileDMS --> compile all modified java source files including packages for DMS using jdk 5.0 or above" />
+		<echo message="  deploy --> copy necessary files for Weblogic exploded mode deployment" />
+		<echo message="  deploy-was --> copy necessary files for UNIX's Websphere environment" />
+		<echo message="  deploy-was-win --> copy necessary files for Windows' Websphere environment" />
+		<echo message="  ws-ejbc -Dejb=	--> compile specific EJB for Websphere environment" />
+		<echo message="  ws-ejbc-all --> compile all EJBs for Websphere environment" />
+		<echo message="  dist-cms-jar --> prepare distribution cms.jar for Websphere environment" />
+		<echo message="  dist-config-jar --> prepare distribution properties jar for Websphere environment" />
+		<echo message="  dist-cms-war --> prepare distribution cms.war for Websphere environment" />
+		<echo message="  dist-cms-ear --> prepare distribution cms.ear for Websphere environment" />
+		<echo message="  dist-unix --> prepare distribution jar, war, ear for Websphere(UNIX) environment" />
+		<echo message="  dist-win --> prepare distribution jar, war, ear for Websphere(Windows) environment" />
+		<echo message="  compile-test --> compile all modiefied java source files in 'test'" />
+		<echo message="  runtests --> run junit test based on 'test' folder" />
+		<echo message="  wls-ejbc-all --> compile all EJBs for Weblogic environment" />
+		<echo message="  migrateejball --> migrate all EJBs from Weblogic to Websphere environment" />
+		<echo message="  wls_hotdeploy--> deploys JSP\Struts for Weblogic 11 environment" />
+		<echo message="  wls_hotdeploy_with_compile	--> performs all mendatory process for Weblogic 11 environment" />
+	</target>
+
+	<target name="init" unless="current.dev.dir">
+		<tstamp />
+		<property file="build.properties" />
+		<property environment="env" />
+
+		<property name="current.dev.dir" value="${env.INTEGRO_HOME}" />
+		<property name="current.bea.dir" value="${env.BEA_HOME}" />
+
+		<echo message="------------ ${project.name} ${project.version} ----------" />
+		<echo message="INTEGRO_HOME : ${env.INTEGRO_HOME}" />
+		
+		<path id="run-classpath">
+			<fileset dir="${3rdparty.dir}" includes="*.jar" />
+		</path>
+		<path id="dms-classpath">
+			<fileset dir="${dmslib.dir}" includes="*.jar" />
+		</path>
+	</target>
+
+	<target name="clean" depends="init">
+		<delete includeEmptyDirs="true" quiet="true">
+			<fileset dir="${classes.dir}" />
+			<fileset dir="${dist.dir}" />
+			<fileset dir="${test.classes.dir}" />
+			<fileset dir="${release.dir}" />
+			<fileset dir="${junit.report.dir}" />
+		</delete>
+	</target>
+
+	<target name="createdirs" depends="init">
+		<property file="build.properties" />
+
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${classes.dir}" />
+		<mkdir dir="${test.classes.dir}" />
+		<mkdir dir="${junit.report.dir}" />
+	</target>
+
+	<target name="buildnumber" description="increase build.number value in 'build.number' by 1">
+		<propertyfile file="build.number">
+			<entry key="build.number" type="int" default="0" operation="+" />
+		</propertyfile>
+		<property file="build.number" />
+		<echo message="Build number is [ ${build.number} ] now" />
+	</target>
+
+	<target name="compile" depends="createdirs">
+		<echo message="------------ Compiling All classes in /src ----------" />
+		<property name="date-pattern" value="MM/dd/yyyy kk:mm:ss" />
+		
+	    <tstamp>
+	    	<format property="class.tstamp" pattern="${date-pattern}" />
+		</tstamp>
+
+		<depend srcdir="${src.dir}" destdir="${classes.dir}" closure="yes" />
+		<javac srcdir="${src.dir}"
+		       destdir="${classes.dir}"
+		       debug="on"
+		       deprecation="false"
+		       optimize="false"
+		       memorymaximumsize="1024m"
+		       source="1.6"
+		       target="1.6"
+		       fork="yes">
+			<classpath refid="run-classpath" />
+			<exclude name="com/integrosys/cms/app/contentManager/ibmDb2Cm/connectionPool/*.java"/> 
+			<exclude name="com/integrosys/cms/app/contentManager/ibmDb2Cm/service/*.java"/> 
+			<exclude name="com/integrosys/cms/app/contentManager/ibmDb2Cm/utilities/*.java"/> 
+			<exclude name="com/integrosys/cms/batch/contentManager/schedular/*.java"/> 
+			<exclude name="com/integrosys/cms/ui/poi/report/*.java"/> 
+			<exclude name="com/integrosys/cms/app/poi/report/*.java"/> 
+			<exclude name="com/integrosys/cms/app/poi/report/writer/*.java"/> 
+			<exclude name="com/integrosys/cms/app/poi/report/xml/schema/*.java"/> 
+			<exclude name="com/integrosys/cms/ui/genlad/*.java"/> 
+			
+		</javac>
+	</target>
+
+		<target name="compileDMS" depends="createdirs">
+		<echo message="------------ Compiling All classes in /src ---------------------------" />
+		<echo message="----1. Copy the following files into 3rdPartyLib folder---------------" />
+		<echo message="----cmbcm81.jar, cmbicm81.jar, cmbicmenv.ini, commons-pool-1.5.6.jar--" />
+		<echo message="----ojdbc6.jar, quartz-1.5.2.jar, xalan-2.7.jar ----------------------" />
+		<echo message="----2. Edit config\spring\batch\AppContext_Master.xml file.-----------" />
+		
+		<echo message="----3. For report module uncomment 'Report Configurations' in followings-----------" />
+		<echo message="----\public_html\WEB-INF\server\weblogic\web.xml  -----------" />
+		<echo message="----\public_html\WEB-INF\server\websphere\web.xml -----------" />
+		<echo message="----\public_html\WEB-INF\struts\struts-config.xml -----------" />
+		<echo message="----\config\spring\AppContext_Core.xml -----------" />
+		<echo message="----4. If Deploying on Weblogic 11 for any changes in ejb  manually create the jar and place in hotDeploy directory-----------" />
+		<echo message="----------------------------------------------------------------------" />
+		<property name="date-pattern" value="MM/dd/yyyy kk:mm:ss" />
+		
+	    <tstamp>
+	    	<format property="class.tstamp" pattern="${date-pattern}" />
+		</tstamp>
+
+		<depend srcdir="${src.dir}" destdir="${classes.dir}" closure="yes" />
+		<javac srcdir="${src.dir}"
+		       destdir="${classes.dir}"
+		       debug="on"
+		       deprecation="false"
+		       optimize="false"
+		       memorymaximumsize="1024m"
+		       source="1.6"
+		       target="1.6"
+		       fork="yes">
+			
+			<!--<classpath refid="run-classpath" />-->
+			<classpath>
+				<!--<pathelement location="${classes.dir}" />-->
+				<path refid="run-classpath" />
+				<path refid="dms-classpath" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="compile-test" depends="compile">
+		<echo message="------------ Compiling All classes in /test ----------" />
+
+		<path id="test-classpath">
+			<fileset dir="${config.dir}/test/lib" includes="*.jar" />
+		</path>
+
+		<javac destdir="${test.classes.dir}"
+		       source="1.6"
+		       target="1.6"
+		       debug="on"
+		       fork="true"
+		       memoryinitialsize="256m"
+		       memorymaximumsize="1024m"
+		       deprecation="false"
+		       optimize="false"
+		       failonerror="true">
+			<src path="${test.src.dir}" />
+			<classpath>
+				<pathelement location="${classes.dir}" />
+				<path refid="run-classpath" />
+				<path refid="test-classpath" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="manifest" depends="init" unless="manifest.file"
+	        description="to create manifest.mf file to be used for META-INF in jar/war/ear distribution">
+
+		<property file="build.number" />
+		<property file="build.properties" />
+		
+		<echo message="Creating MANIFEST.MF for META-INF in JAR/WAR/EAR distribution in ${config.dir}/MANIFEST.MF" />
+
+		<manifest file="${config.dir}/MANIFEST.MF">
+			<attribute name="Java-Version" value="${ant.java.version}" />
+			<attribute name="Created-By" value="${user.name}" />
+			<attribute name="Implementation-Vendor" value="${cms-impl}" />
+			<attribute name="Implementation-Title" value="${cms-title}" />
+			<attribute name="Implementation-Version" value="${cms-version} Build ${build.number}" />
+			<attribute name="CMS-Version" value="${cms-version}" />
+			<attribute name="Class-Path" value="${cms-classpath}" />
+		</manifest>
+
+		<property name="manifest.file" value="MANIFEST.MF" />
+	</target>
+
+	<target name="dist-cms-jar-DMS" depends="compileDMS, manifest" description="create cms.jar for all the classes">
+		<echo message="Creating cms.jar for all classes in ${classes.dir}" />
+
+		<jar jarfile="${dist.dir}/cms.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${classes.dir}">
+				<patternset refid="cms.full.packages" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="dist-cms-jar" depends="compile, manifest" description="create cms.jar for all the classes">
+			<echo message="Creating cms.jar for all classes in ${classes.dir}" />
+
+			<jar jarfile="${dist.dir}/cms.jar" manifest="${config.dir}/${manifest.file}">
+				<fileset dir="${classes.dir}">
+					<patternset refid="cms.full.packages" />
+				</fileset>
+			</jar>
+	</target>
+
+	<target name="dist-config-jar" depends="manifest" description="create properties jars">
+		<echo message="Creating configuration jars, for properties, message, spring, hibernate, castor and velocity template" />
+		<echo message="Make sure one of the deploy* task is run prior to this, task: deploy, deploy-wls, deploy-was-win, deploy-was" />
+
+		<jar jarfile="${dist.dir}/properties.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/properties"
+			         includes="*.properties, *.xml" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/message-resource.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/message"
+			         includes="*.properties" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/stp.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/stp"
+			         includes="*.xml, *.properties" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/spring-context.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/spring"
+					 includes="**/*.xml"
+			         excludes="AppContext_TrxDataSource_Mock.xml, *Test.xml" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/hibernate-mapping.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/hibernate" includes="*.xml" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/castor-compare.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/castor/compare" includes="**/*.xml" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/castor-mapping.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/castor/mapping" includes="*.xml" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/velocity-template.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/notificationtemplates" includes="*.vtl, *.rtf" />
+		</jar>
+
+		<jar jarfile="${dist.dir}/upload-templatexml.jar" manifest="${config.dir}/${manifest.file}">
+			<fileset dir="${config.dir}/templatexml" includes="*.xml" />
+		</jar>
+	</target>
+
+	<target name="reload" depends="compile" description="To hotswap the class file">
+	  	<taskdef name="hotswap" classname="dak.ant.taskdefs.Hotswap">
+			<classpath refid="run-classpath"/>
+	  	</taskdef>
+
+		<hotswap verbose="true" port="7008">
+			<fileset dir="${classes.dir}" includes="**/*.class">
+		        <date datetime="${class.tstamp}" pattern="${date-pattern}" when="after" granularity="0"/>
+			</fileset>
+	 	</hotswap>
+	</target>
+
+	<target name="runtests" depends="compile-test" description="Run main test in 'test' folder">
+		<!-- Pick up config files from test directory -->
+		<copy todir="${test.classes.dir}" preservelastmodified="true">
+			<fileset dir="${test.src.dir}">
+				<include name="**/*.properties"/>
+				<include name="**/*.xml"/>
+			</fileset>
+		</copy>
+
+		<junit dir="${test.classes.dir}" forkmode="perBatch" printsummary="yes" haltonfailure="no" haltonerror="no">
+			<jvmarg line="-Djava.awt.headless=true -Xmx128m -XX:+HeapDumpOnOutOfMemoryError" />
+
+			<classpath location="${classes.dir}" />
+			<classpath location="${test.classes.dir}" />
+			<classpath location="${config.dir}/spring" />
+			<classpath location="${config.dir}/stp" />
+			<classpath location="${config.dir}/hibernate" />
+			<classpath location="${config.dir}/properties" />
+			<classpath location="${config.dir}/castor/compare" />
+			<classpath location="${config.dir}/castor/mapping" />
+			<classpath location="${config.dir}/message" />
+			<classpath location="${public.html.dir}" />
+			<classpath location="${config.dir}/test" />
+			<classpath location="${config.dir}/test/context" />
+			<classpath location="${config.dir}/test/eai-message" />
+			<classpath>
+				<path refid="run-classpath" />
+				<fileset dir="${config.dir}/test/lib" includes="*.jar" />
+			</classpath>
+
+			<formatter type="plain" usefile="true" />
+
+			<batchtest fork="yes" todir="${junit.report.dir}">
+				<fileset dir="${test.classes.dir}" includes="**/*Test.class" />
+			</batchtest>
+		</junit>
+	</target>
+	<target name="all" depends="clean,compile,dist" />
+
+</project>
